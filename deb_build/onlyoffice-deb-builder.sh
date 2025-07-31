@@ -122,7 +122,7 @@ build_deb() {
   # apt install build-essential m4 npm
   # npm install -g pkg
 
-  git clone https://github.com/ONLYOFFICE/document-server-package.git -b ${_GIT_CLONE_BRANCH}
+  git clone https://github.com/ONLYOFFICE/document-server-package.git -b hotfix/v9.0.4
   # Ignore DETACHED warnings
   # Workaround for installing dependencies - BEGIN
   cd ${DOCUMENT_SERVER_PACKAGE_PATH}
