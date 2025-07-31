@@ -146,44 +146,8 @@ EOF
   fi
 fi
 
-build_oo_binaries() {
-
-  _OUT_FOLDER=$1 # out
-  _PRODUCT_VERSION=$2 # 7.4.1
-  _BUILD_NUMBER=$3 # 36
-  _TAG_SUFFIX=$4 # -btactic
-  _UNLIMITED_ORGANIZATION=$5 # btactic-oo
-
-  _GIT_CLONE_BRANCH="v${_PRODUCT_VERSION}.${_BUILD_NUMBER}${_TAG_SUFFIX}"
-
-  git clone \
-    --depth=1 \
-    --recursive \
-    --branch ${_GIT_CLONE_BRANCH} \
-    https://github.com/${_UNLIMITED_ORGANIZATION}/build_tools.git \
-    build_tools
-  # Ignore detached head warning
-  cd build_tools
-  mkdir ${_OUT_FOLDER}
-  docker build --tag onlyoffice-document-editors-builder .
-  docker run -e PRODUCT_VERSION=${_PRODUCT_VERSION} -e BUILD_NUMBER=${_BUILD_NUMBER} -e NODE_ENV='production' -v $(pwd)/${_OUT_FOLDER}:/build_tools/out onlyoffice-document-editors-builder /bin/bash -c 'cd tools/linux && python3 ./automate.py --branch=tags/'"${_GIT_CLONE_BRANCH}"
-  cd ..
-
-}
-
-if [ "${BUILD_BINARIES}" == "true" ] ; then
-  build_oo_binaries "out" "${PRODUCT_VERSION}" "${BUILD_NUMBER}" "${TAG_SUFFIX}" "${UNLIMITED_ORGANIZATION}"
-  build_oo_binaries_exit_value=$?
-fi
-
-# Simulate that binaries build went ok
-# when we only want to make the deb
-if [ ${DEB_ONLY} == "true" ] ; then
-  build_oo_binaries_exit_value=0
-fi
 
 if [ "${BUILD_DEB}" == "true" ] ; then
-  if [ ${build_oo_binaries_exit_value} -eq 0 ] ; then
     cd deb_build
     docker build --tag onlyoffice-deb-builder . -f Dockerfile-manual-debian-11
     docker run \
@@ -197,9 +161,4 @@ if [ "${BUILD_DEB}" == "true" ] ; then
       -v $(pwd)/../build_tools:/root/build_tools:ro \
       onlyoffice-deb-builder /bin/bash -c "/usr/local/unlimited-onlyoffice-package-builder/onlyoffice-deb-builder.sh --product-version ${PRODUCT_VERSION} --build-number ${BUILD_NUMBER} --tag-suffix ${TAG_SUFFIX} --unlimited-organization ${UNLIMITED_ORGANIZATION} --debian-package-suffix ${DEBIAN_PACKAGE_SUFFIX}"
     cd ..
-  else
-    echo "Binaries build failed!"
-    echo "Aborting... !"
-    exit 1
-  fi
 fi
